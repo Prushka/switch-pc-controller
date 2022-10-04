@@ -12,7 +12,6 @@ func readByte() byte {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Info("Read byte: ", bytesRead)
 	return bytesRead[0]
 }
 
