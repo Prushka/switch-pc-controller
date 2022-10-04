@@ -43,19 +43,49 @@ func pressKey(key int64) bool {
 	return sendNoInput()
 }
 
+func matchNoOrder(s1, s2, m1, m2 int) bool {
+	return (s1 == m1 && s2 == m2) || (s1 == m2 && s2 == m1)
+}
+
 func sendHoldingButtons() bool {
 	var buttons int64
 	for button := range holdingButtons.Iter() {
 		buttons += int64(button)
 	}
+
 	return sendCommand(buttons)
 }
 
-var keyMap = map[string]byte{
-	"A": BTN_A,
+var keyMap = map[string]int{
+	"A":       BTN_A,
+	"B":       BTN_B,
+	"X":       BTN_X,
+	"Y":       BTN_Y,
+	"U":       DPAD_U,
+	"R":       DPAD_R,
+	"D":       DPAD_D,
+	"L":       DPAD_L,
+	"ZR":      BTN_ZR,
+	"ZL":      BTN_ZL,
+	"LR":      BTN_R,
+	"LL":      BTN_L,
+	"LClick":  BTN_LCLICK,
+	"RClick":  BTN_RCLICK,
+	"Plus":    BTN_PLUS,
+	"Minus":   BTN_MINUS,
+	"Home":    BTN_HOME,
+	"Capture": BTN_CAPTURE,
+	"LUp":     LSTICK_U,
+	"LDown":   LSTICK_D,
+	"LLeft":   LSTICK_L,
+	"LRight":  LSTICK_R,
+	"RUp":     RSTICK_U,
+	"RDown":   RSTICK_D,
+	"RLeft":   RSTICK_L,
+	"RRight":  RSTICK_R,
 }
 
-var holdingButtons = mapset.NewSet[byte]()
+var holdingButtons = mapset.NewSet[int]()
 
 func InitFiber() {
 	app := fiber.New()
@@ -65,17 +95,61 @@ func InitFiber() {
 		key := c.Params("key")
 		log.Infof("Action: %s | Key: %s", action, key)
 		mapped, ok := keyMap[key]
-		if !ok {
+		if !ok && action != "A" {
 			return c.SendString("i")
 		}
 		switch action {
 		case "A":
+			holdingButtons.Clear()
 			sendNoInput()
 		case "R":
 			holdingButtons.Remove(mapped)
 			sendHoldingButtons()
 		case "H":
-			holdingButtons.Add(mapped)
+			newButton := mapped
+			switch mapped {
+			case LSTICK_U:
+				if holdingButtons.Contains(LSTICK_D) {
+					holdingButtons.Remove(LSTICK_D)
+				}
+				if holdingButtons.Contains(LSTICK_L) {
+					newButton = LSTICK_U_L
+				}
+				if holdingButtons.Contains(LSTICK_R) {
+					newButton = LSTICK_U_R
+				}
+			case LSTICK_D:
+				if holdingButtons.Contains(LSTICK_U) {
+					holdingButtons.Remove(LSTICK_U)
+				}
+				if holdingButtons.Contains(LSTICK_L) {
+					newButton = LSTICK_D_L
+				}
+				if holdingButtons.Contains(LSTICK_R) {
+					newButton = LSTICK_D_R
+				}
+			case LSTICK_L:
+				if holdingButtons.Contains(LSTICK_R) {
+					holdingButtons.Remove(LSTICK_R)
+				}
+				if holdingButtons.Contains(LSTICK_U) {
+					newButton = LSTICK_U_L
+				}
+				if holdingButtons.Contains(LSTICK_D) {
+					newButton = LSTICK_D_L
+				}
+			case LSTICK_R:
+				if holdingButtons.Contains(LSTICK_L) {
+					holdingButtons.Remove(LSTICK_L)
+				}
+				if holdingButtons.Contains(LSTICK_U) {
+					newButton = LSTICK_U_R
+				}
+				if holdingButtons.Contains(LSTICK_D) {
+					newButton = LSTICK_D_R
+				}
+			}
+			holdingButtons.Add(newButton)
 			sendHoldingButtons()
 		}
 		return c.SendString("o")
