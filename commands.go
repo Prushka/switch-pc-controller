@@ -91,3 +91,11 @@ const (
 	RESP_SYNC_1      = 0xCC
 	RESP_SYNC_OK     = 0x33
 )
+
+func lstickAngle(angle, intensity int64) int64 {
+	return (intensity + (angle << 8)) << 24
+}
+
+func rstickAngle(angle, intensity int64) int64 {
+	return (intensity + (angle << 8)) << 44
+}

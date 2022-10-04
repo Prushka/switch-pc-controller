@@ -8,20 +8,13 @@ import (
 
 var client *serial.Port
 
-func testCommand(command int64) {
-	for i := 0; i < 5; i++ {
-		sendCommand(command)
-		time.Sleep(100 * time.Millisecond)
-		sendNoInput()
-	}
-}
-
 func main() {
 	config := &serial.Config{
 		Baud:        19200,
 		Name:        "COM5",
 		ReadTimeout: 1 * time.Second,
 	}
+	time.Sleep(3 * time.Second)
 	var err error
 	client, err = serial.OpenPort(config)
 	if err != nil {
@@ -40,5 +33,5 @@ func main() {
 	if !sendNoInput() {
 		log.Fatal("Packet Error!")
 	}
-	testCommand(BTN_A)
+	testStick()
 }
