@@ -82,17 +82,17 @@ func sendHoldingButtons() bool {
 	}
 	if mouseYDiff != 0 || mouseXDiff != 0 {
 		length := int64(math.Sqrt(float64(mouseXDiff*mouseXDiff + mouseYDiff*mouseYDiff)))
-		if length > 400 {
-			length = 400
+		if length > 50 {
+			length = 50
 		}
-		intensity := int64((float64(length) / 200) * 255)
+		intensity := int64((float64(length) / 50) * 255)
 		angle := math.Atan(float64(mouseYDiff)/float64(mouseXDiff)) * 180 / math.Pi
 		if mouseXDiff < 0 {
 			angle += 180
 		} else if mouseYDiff < 0 {
 			angle += 360
 		}
-		log.Infof("Length: %d, Angle: %d, Intensity: %d", length, angle, intensity)
+		log.Debugf("Length: %d, Angle: %d, Intensity: %d", length, angle, intensity)
 		buttons += rstickAngle(int64(angle), intensity)
 	}
 	return sendCommand(buttons)
@@ -155,7 +155,6 @@ func InitFiber() {
 				mouseXDiff, _ = strconv.Atoi(s[0])
 				mouseYDiff, _ = strconv.Atoi(s[1])
 				mouseYDiff = -mouseYDiff
-				log.Infof("Mouse: %d, %d", mouseXDiff, mouseYDiff)
 				sendHoldingButtons()
 			}
 		case "A":
