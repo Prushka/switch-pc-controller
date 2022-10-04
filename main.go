@@ -5,6 +5,9 @@ import (
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/tarm/serial"
+	"math"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -41,10 +44,6 @@ func matchNoOrder[T comparable](s1, s2, m1, m2 T) bool {
 }
 
 func sendHoldingButtons() bool {
-	if holdingButtons.Cardinality() == 0 && holdingLSticks.Cardinality() == 0 && holdingRSticks.Cardinality() == 0 {
-		sendNoInput()
-		return true
-	}
 	var buttons int64
 	for button := range holdingButtons.Iter() {
 		buttons += int64(button)
@@ -81,6 +80,21 @@ func sendHoldingButtons() bool {
 			buttons += RSTICK_D_R
 		}
 	}
+	if mouseYDiff != 0 || mouseXDiff != 0 {
+		length := int64(math.Sqrt(float64(mouseXDiff*mouseXDiff + mouseYDiff*mouseYDiff)))
+		if length > 400 {
+			length = 400
+		}
+		intensity := int64((float64(length) / 200) * 255)
+		angle := math.Atan(float64(mouseYDiff)/float64(mouseXDiff)) * 180 / math.Pi
+		if mouseXDiff < 0 {
+			angle += 180
+		} else if mouseYDiff < 0 {
+			angle += 360
+		}
+		log.Infof("Length: %d, Angle: %d, Intensity: %d", length, angle, intensity)
+		buttons += rstickAngle(int64(angle), intensity)
+	}
 	return sendCommand(buttons)
 }
 
@@ -116,6 +130,8 @@ var keyMap = map[string]int{
 var holdingButtons = mapset.NewSet[int]()
 var holdingLSticks = mapset.NewSet[string]()
 var holdingRSticks = mapset.NewSet[string]()
+var mouseXDiff int
+var mouseYDiff int
 
 var mutex = sync.Mutex{}
 
@@ -129,10 +145,19 @@ func InitFiber() {
 		key := c.Param("key")
 		log.Infof("Action: %s | Key: %s", action, key)
 		mapped, ok := keyMap[key]
-		if !ok && action != "A" {
+		if !ok && action != "A" && action != "D" {
 			return nil
 		}
 		switch action {
+		case "D":
+			s := strings.Split(key, ",")
+			if len(s) == 2 {
+				mouseXDiff, _ = strconv.Atoi(s[0])
+				mouseYDiff, _ = strconv.Atoi(s[1])
+				mouseYDiff = -mouseYDiff
+				log.Infof("Mouse: %d, %d", mouseXDiff, mouseYDiff)
+				sendHoldingButtons()
+			}
 		case "A":
 			holdingButtons.Clear()
 			sendNoInput()
