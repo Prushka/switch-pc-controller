@@ -2,9 +2,10 @@ package main
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/gofiber/fiber/v2"
+	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/tarm/serial"
+	"sync"
 	"time"
 )
 
@@ -22,8 +23,7 @@ func InitUART() {
 		log.Fatal(err)
 	}
 	log.Info("Connected to COM5")
-	sync := sync()
-	if !sync {
+	if !syncUART() {
 		log.Fatal("Failed to sync")
 	}
 	log.Info("Synced")
@@ -41,7 +41,7 @@ func matchNoOrder[T comparable](s1, s2, m1, m2 T) bool {
 }
 
 func sendHoldingButtons() bool {
-	if holdingButtons.Cardinality() == 0 {
+	if holdingButtons.Cardinality() == 0 && holdingLSticks.Cardinality() == 0 && holdingRSticks.Cardinality() == 0 {
 		sendNoInput()
 		return true
 	}
@@ -101,16 +101,20 @@ var holdingButtons = mapset.NewSet[int]()
 var holdingLSticks = mapset.NewSet[string]()
 var holdingRSticks = mapset.NewSet[string]()
 
-func InitFiber() {
-	app := fiber.New()
+var mutex = sync.Mutex{}
 
-	app.Get("/:ac/:key", func(c *fiber.Ctx) error {
-		action := c.Params("ac")
-		key := c.Params("key")
+func InitFiber() {
+	app := echo.New()
+
+	app.GET("/:ac/:key", func(c echo.Context) error {
+		mutex.Lock()
+		defer mutex.Unlock()
+		action := c.Param("ac")
+		key := c.Param("key")
 		log.Infof("Action: %s | Key: %s", action, key)
 		mapped, ok := keyMap[key]
 		if !ok && action != "A" {
-			return c.SendString("i")
+			return nil
 		}
 		switch action {
 		case "A":
@@ -118,6 +122,8 @@ func InitFiber() {
 			sendNoInput()
 		case "R":
 			prev := holdingButtons.Clone()
+			prevLSticks := holdingLSticks.Clone()
+			prevRSticks := holdingRSticks.Clone()
 			switch mapped {
 			case LSTICK_U, LSTICK_D, LSTICK_L, LSTICK_R:
 				holdingLSticks.Remove(key)
@@ -126,37 +132,37 @@ func InitFiber() {
 			default:
 				holdingButtons.Remove(mapped)
 			}
-			if !prev.Equal(holdingButtons) {
+			if !prev.Equal(holdingButtons) || !prevLSticks.Equal(holdingLSticks) || !prevRSticks.Equal(holdingRSticks) {
 				sendHoldingButtons()
 			}
 		case "H":
 			prev := holdingButtons.Clone()
-			switch mapped {
-			case LSTICK_U:
+			prevLSticks := holdingLSticks.Clone()
+			prevRSticks := holdingRSticks.Clone()
+			switch key {
+			case "LUp":
 				holdingLSticks.Remove("LDown")
-			case LSTICK_D:
+			case "LDown":
 				holdingLSticks.Remove("LUp")
-			case LSTICK_L:
+			case "LLeft":
 				holdingLSticks.Remove("LRight")
-			case LSTICK_R:
+			case "LRight":
 				holdingLSticks.Remove("LLeft")
 			}
-			switch mapped {
-			case LSTICK_U, LSTICK_D, LSTICK_L, LSTICK_R:
+			switch key {
+			case "LUp", "LDown", "LLeft", "LRight":
 				holdingLSticks.Add(key)
-			case RSTICK_U, RSTICK_D, RSTICK_L, RSTICK_R:
-				holdingRSticks.Add(key)
 			default:
 				holdingButtons.Add(mapped)
 			}
-			if !prev.Equal(holdingButtons) {
+			if !prev.Equal(holdingButtons) || !prevLSticks.Equal(holdingLSticks) || !prevRSticks.Equal(holdingRSticks) {
 				sendHoldingButtons()
 			}
 		}
-		return c.SendString("o")
+		return nil
 	})
 
-	err := app.Listen(":80")
+	err := app.Start(":80")
 	if err != nil {
 		log.Fatal("Failed to start server")
 	}

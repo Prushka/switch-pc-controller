@@ -133,7 +133,7 @@ func forceSync() bool {
 	return false
 }
 
-func sync() bool {
+func syncUART() bool {
 	synced := false
 	synced = sendPacket(nil)
 	if !synced {
