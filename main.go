@@ -65,6 +65,22 @@ func sendHoldingButtons() bool {
 			buttons += LSTICK_D_R
 		}
 	}
+	if holdingRSticks.Cardinality() == 1 {
+		buttons += int64(keyMap[holdingRSticks.ToSlice()[0]])
+	} else if holdingRSticks.Cardinality() > 1 {
+		s := holdingRSticks.ToSlice()
+		r1 := keyMap[s[0]]
+		r2 := keyMap[s[1]]
+		if matchNoOrder(r1, r2, RSTICK_U, RSTICK_L) {
+			buttons += RSTICK_U_L
+		} else if matchNoOrder(r1, r2, RSTICK_U, RSTICK_R) {
+			buttons += RSTICK_U_R
+		} else if matchNoOrder(r1, r2, RSTICK_D, RSTICK_L) {
+			buttons += RSTICK_D_L
+		} else if matchNoOrder(r1, r2, RSTICK_D, RSTICK_R) {
+			buttons += RSTICK_D_R
+		}
+	}
 	return sendCommand(buttons)
 }
 
@@ -148,10 +164,20 @@ func InitFiber() {
 				holdingLSticks.Remove("LRight")
 			case "LRight":
 				holdingLSticks.Remove("LLeft")
+			case "RUp":
+				holdingRSticks.Remove("RDown")
+			case "RDown":
+				holdingRSticks.Remove("RUp")
+			case "RLeft":
+				holdingRSticks.Remove("RRight")
+			case "RRight":
+				holdingRSticks.Remove("RLeft")
 			}
 			switch key {
 			case "LUp", "LDown", "LLeft", "LRight":
 				holdingLSticks.Add(key)
+			case "RUp", "RDown", "RLeft", "RRight":
+				holdingRSticks.Add(key)
 			default:
 				holdingButtons.Add(mapped)
 			}
