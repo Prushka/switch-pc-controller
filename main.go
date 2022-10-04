@@ -16,7 +16,6 @@ func InitUART() {
 		Name:        "COM5",
 		ReadTimeout: 1 * time.Second,
 	}
-	time.Sleep(3 * time.Second)
 	var err error
 	client, err = serial.OpenPort(config)
 	if err != nil {
@@ -37,22 +36,35 @@ func InitUART() {
 	}
 }
 
-func pressKey(key int64) bool {
-	sendCommand(key)
-	time.Sleep(1 * time.Millisecond)
-	return sendNoInput()
-}
-
-func matchNoOrder(s1, s2, m1, m2 int) bool {
+func matchNoOrder[T comparable](s1, s2, m1, m2 T) bool {
 	return (s1 == m1 && s2 == m2) || (s1 == m2 && s2 == m1)
 }
 
 func sendHoldingButtons() bool {
+	if holdingButtons.Cardinality() == 0 {
+		sendNoInput()
+		return true
+	}
 	var buttons int64
 	for button := range holdingButtons.Iter() {
 		buttons += int64(button)
 	}
-
+	if holdingLSticks.Cardinality() == 1 {
+		buttons += int64(keyMap[holdingLSticks.ToSlice()[0]])
+	} else if holdingLSticks.Cardinality() > 1 {
+		s := holdingLSticks.ToSlice()
+		l1 := keyMap[s[0]]
+		l2 := keyMap[s[1]]
+		if matchNoOrder(l1, l2, LSTICK_U, LSTICK_L) {
+			buttons += LSTICK_U_L
+		} else if matchNoOrder(l1, l2, LSTICK_U, LSTICK_R) {
+			buttons += LSTICK_U_R
+		} else if matchNoOrder(l1, l2, LSTICK_D, LSTICK_L) {
+			buttons += LSTICK_D_L
+		} else if matchNoOrder(l1, l2, LSTICK_D, LSTICK_R) {
+			buttons += LSTICK_D_R
+		}
+	}
 	return sendCommand(buttons)
 }
 
@@ -86,6 +98,8 @@ var keyMap = map[string]int{
 }
 
 var holdingButtons = mapset.NewSet[int]()
+var holdingLSticks = mapset.NewSet[string]()
+var holdingRSticks = mapset.NewSet[string]()
 
 func InitFiber() {
 	app := fiber.New()
@@ -103,54 +117,41 @@ func InitFiber() {
 			holdingButtons.Clear()
 			sendNoInput()
 		case "R":
-			holdingButtons.Remove(mapped)
-			sendHoldingButtons()
+			prev := holdingButtons.Clone()
+			switch mapped {
+			case LSTICK_U, LSTICK_D, LSTICK_L, LSTICK_R:
+				holdingLSticks.Remove(key)
+			case RSTICK_U, RSTICK_D, RSTICK_L, RSTICK_R:
+				holdingRSticks.Remove(key)
+			default:
+				holdingButtons.Remove(mapped)
+			}
+			if !prev.Equal(holdingButtons) {
+				sendHoldingButtons()
+			}
 		case "H":
-			newButton := mapped
+			prev := holdingButtons.Clone()
 			switch mapped {
 			case LSTICK_U:
-				if holdingButtons.Contains(LSTICK_D) {
-					holdingButtons.Remove(LSTICK_D)
-				}
-				if holdingButtons.Contains(LSTICK_L) {
-					newButton = LSTICK_U_L
-				}
-				if holdingButtons.Contains(LSTICK_R) {
-					newButton = LSTICK_U_R
-				}
+				holdingLSticks.Remove("LDown")
 			case LSTICK_D:
-				if holdingButtons.Contains(LSTICK_U) {
-					holdingButtons.Remove(LSTICK_U)
-				}
-				if holdingButtons.Contains(LSTICK_L) {
-					newButton = LSTICK_D_L
-				}
-				if holdingButtons.Contains(LSTICK_R) {
-					newButton = LSTICK_D_R
-				}
+				holdingLSticks.Remove("LUp")
 			case LSTICK_L:
-				if holdingButtons.Contains(LSTICK_R) {
-					holdingButtons.Remove(LSTICK_R)
-				}
-				if holdingButtons.Contains(LSTICK_U) {
-					newButton = LSTICK_U_L
-				}
-				if holdingButtons.Contains(LSTICK_D) {
-					newButton = LSTICK_D_L
-				}
+				holdingLSticks.Remove("LRight")
 			case LSTICK_R:
-				if holdingButtons.Contains(LSTICK_L) {
-					holdingButtons.Remove(LSTICK_L)
-				}
-				if holdingButtons.Contains(LSTICK_U) {
-					newButton = LSTICK_U_R
-				}
-				if holdingButtons.Contains(LSTICK_D) {
-					newButton = LSTICK_D_R
-				}
+				holdingLSticks.Remove("LLeft")
 			}
-			holdingButtons.Add(newButton)
-			sendHoldingButtons()
+			switch mapped {
+			case LSTICK_U, LSTICK_D, LSTICK_L, LSTICK_R:
+				holdingLSticks.Add(key)
+			case RSTICK_U, RSTICK_D, RSTICK_L, RSTICK_R:
+				holdingRSticks.Add(key)
+			default:
+				holdingButtons.Add(mapped)
+			}
+			if !prev.Equal(holdingButtons) {
+				sendHoldingButtons()
+			}
 		}
 		return c.SendString("o")
 	})
