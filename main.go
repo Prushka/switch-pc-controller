@@ -8,6 +8,14 @@ import (
 
 var client *serial.Port
 
+func testCommand(command int64) {
+	for i := 0; i < 5; i++ {
+		sendCommand(command)
+		time.Sleep(100 * time.Millisecond)
+		sendNoInput()
+	}
+}
+
 func main() {
 	config := &serial.Config{
 		Baud:        19200,
@@ -32,4 +40,5 @@ func main() {
 	if !sendNoInput() {
 		log.Fatal("Packet Error!")
 	}
+	testCommand(BTN_A)
 }
