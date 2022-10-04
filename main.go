@@ -1,6 +1,7 @@
 package main
 
 import (
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/tarm/serial"
@@ -42,9 +43,19 @@ func pressKey(key int64) bool {
 	return sendNoInput()
 }
 
+func sendHoldingButtons() bool {
+	var buttons int64
+	for button := range holdingButtons.Iter() {
+		buttons += int64(button)
+	}
+	return sendCommand(buttons)
+}
+
 var keyMap = map[string]byte{
 	"A": BTN_A,
 }
+
+var holdingButtons = mapset.NewSet[byte]()
 
 func InitFiber() {
 	app := fiber.New()
@@ -58,11 +69,14 @@ func InitFiber() {
 			return c.SendString("i")
 		}
 		switch action {
-		case "P":
-			pressKey(int64(mapped))
+		case "A":
+			sendNoInput()
 		case "R":
+			holdingButtons.Remove(mapped)
+			sendHoldingButtons()
 		case "H":
-
+			holdingButtons.Add(mapped)
+			sendHoldingButtons()
 		}
 		return c.SendString("o")
 	})

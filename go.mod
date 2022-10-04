@@ -9,6 +9,7 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
+	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203 // indirect
 	github.com/gofiber/fiber/v2 v2.38.1 // indirect
 	github.com/klauspost/compress v1.15.0 // indirect
