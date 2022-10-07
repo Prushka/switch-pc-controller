@@ -4,7 +4,7 @@ Please check: https://github.com/wchill/SwitchInputEmulator.git
 ## Software Setup
 
 1. Launch go package: SwitchKeyboard (main.go)
-   * This will connect to UART (please modify the path/port), sync the controller, and launch a REST server at address `:80`
+   * This connects to UART (please modify the path/port), syncs the controller, and launches a REST server at address `:80`
    * The REST server forwards all incoming requests to the UART
 2. Launch `switch.ahk`
     * This forwards all keyboards command to the go REST server
