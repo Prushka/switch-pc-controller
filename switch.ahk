@@ -36,7 +36,7 @@ global centerX := Round(totalWidth//2)
 global centerY := Round(totalHeight//2)
 
 DllCall("Winmm.dll\timeBeginPeriod", UInt, 1)
-launchDebug()
+; launchDebug()
 
 md := new MouseDelta("MouseEvent")
 md.SetState(true)
@@ -313,6 +313,30 @@ return
 
 $d Up::
 releaseButton("LRight")
+return
+
+$r::
+holdButton("RClick")
+return
+
+$r Up::
+releaseButton("RClick")
+return
+
+$-::
+holdButton("Minus")
+return
+
+$- Up::
+releaseButton("Minus")
+return
+
+$=::
+holdButton("Plus")
+return
+
+$= Up::
+releaseButton("Plus")
 return
 
 $LButton::
