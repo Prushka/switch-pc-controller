@@ -48,8 +48,10 @@ CheckMouseEvent() {
     if (paused) {
         return
     }
-    if (A_TickCount - lastMouseCheck > 100) {
+    if (A_TickCount - lastMouseCheck > 100 and (prevXDiff != 0 or prevYDiff != 0)) {
         sendMouseDiff(0, 0)
+        prevXDiff := 0
+        prevYDiff := 0
         return
     }
 }
@@ -62,6 +64,8 @@ MouseEvent(MouseID, x := 0, y := 0){
 	text := "x: " x ", y: " y (lastMouseCheck ? (", Delta Time: " t - lastMouseCheck " ms, MouseID: " MouseID) : "")
 	print(text)
 	lastMouseCheck := t
+  prevXDiff := x
+  prevYDiff := y
   sendMouseDiff(x, y)
 }
 
