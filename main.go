@@ -43,6 +43,8 @@ func matchNoOrder[T comparable](s1, s2, m1, m2 T) bool {
 	return (s1 == m1 && s2 == m2) || (s1 == m2 && s2 == m1)
 }
 
+const MouseMax = 10
+
 func sendHoldingButtons() bool {
 	var buttons int64
 	for button := range holdingButtons.Iter() {
@@ -82,10 +84,10 @@ func sendHoldingButtons() bool {
 	}
 	if mouseYDiff != 0 || mouseXDiff != 0 {
 		length := int64(math.Sqrt(float64(mouseXDiff*mouseXDiff + mouseYDiff*mouseYDiff)))
-		if length > 50 {
-			length = 50
+		if length > MouseMax {
+			length = MouseMax
 		}
-		intensity := int64((float64(length) / 50) * 255)
+		intensity := int64((float64(length) / MouseMax) * 255)
 		angle := math.Atan(float64(mouseYDiff)/float64(mouseXDiff)) * 180 / math.Pi
 		if mouseXDiff < 0 {
 			angle += 180
@@ -135,7 +137,7 @@ var mouseYDiff int
 
 var mutex = sync.Mutex{}
 
-func InitFiber() {
+func InitREST() {
 	app := echo.New()
 
 	app.GET("/:ac/:key", func(c echo.Context) error {
@@ -220,5 +222,5 @@ func InitFiber() {
 
 func main() {
 	InitUART()
-	InitFiber()
+	InitREST()
 }
