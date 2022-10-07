@@ -323,6 +323,14 @@ $LButton Up::
 releaseButton("ZR")
 return
 
+$MButton::
+holdButton("Y")
+return
+
+$MButton Up::
+releaseButton("Y")
+return
+
 $RButton::
 holdButton("ZL")
 return
