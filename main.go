@@ -44,8 +44,10 @@ func matchNoOrder[T comparable](s1, s2, m1, m2 T) bool {
 }
 
 const MouseMax = 5
-const xAmp = 1.5
+const xAmp = 1.8
 const yAmp = 1
+const xLowerBound = 1
+const yLowerBound = 2
 
 func sendHoldingButtons() bool {
 	var buttons int64
@@ -90,7 +92,7 @@ func sendHoldingButtons() bool {
 			length = MouseMax
 		}
 		intensity := int64((float64(length) / MouseMax) * 255)
-		angle := math.Atan(float64(mouseYDiff)/float64(mouseXDiff)) * 180 / math.Pi
+		angle := math.Atan(float64(mouseYDiff/mouseXDiff)) * 180 / math.Pi
 		if mouseXDiff < 0 {
 			angle += 180
 		} else if mouseYDiff < 0 {
@@ -134,8 +136,8 @@ var keyMap = map[string]int{
 var holdingButtons = mapset.NewSet[int]()
 var holdingLSticks = mapset.NewSet[string]()
 var holdingRSticks = mapset.NewSet[string]()
-var mouseXDiff int
-var mouseYDiff int
+var mouseXDiff float32
+var mouseYDiff float32
 
 var mutex = sync.Mutex{}
 
@@ -156,11 +158,19 @@ func InitREST() {
 		case "D":
 			s := strings.Split(key, ",")
 			if len(s) == 2 {
-				mouseXDiff, _ = strconv.Atoi(s[0])
-				mouseYDiff, _ = strconv.Atoi(s[1])
+				x, _ := strconv.Atoi(s[0])
+				y, _ := strconv.Atoi(s[1])
+				mouseXDiff = float32(x)
+				mouseYDiff = float32(y)
+				if mouseXDiff < xLowerBound {
+					mouseXDiff = xLowerBound
+				}
+				if mouseYDiff < yLowerBound {
+					mouseYDiff = yLowerBound
+				}
 				mouseYDiff = -mouseYDiff
-				mouseXDiff = int(float64(mouseXDiff) * xAmp)
-				mouseYDiff = int(float64(mouseYDiff) * yAmp)
+				mouseXDiff = mouseXDiff * xAmp
+				mouseYDiff = mouseYDiff * yAmp
 				sendHoldingButtons()
 			}
 		case "A":
