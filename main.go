@@ -43,7 +43,9 @@ func matchNoOrder[T comparable](s1, s2, m1, m2 T) bool {
 	return (s1 == m1 && s2 == m2) || (s1 == m2 && s2 == m1)
 }
 
-const MouseMax = 10
+const MouseMax = 5
+const xAmp = 1.5
+const yAmp = 1
 
 func sendHoldingButtons() bool {
 	var buttons int64
@@ -157,6 +159,8 @@ func InitREST() {
 				mouseXDiff, _ = strconv.Atoi(s[0])
 				mouseYDiff, _ = strconv.Atoi(s[1])
 				mouseYDiff = -mouseYDiff
+				mouseXDiff = int(float64(mouseXDiff) * xAmp)
+				mouseYDiff = int(float64(mouseYDiff) * yAmp)
 				sendHoldingButtons()
 			}
 		case "A":
