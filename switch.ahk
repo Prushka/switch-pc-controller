@@ -70,7 +70,7 @@ CheckMouseEvent() {
 
 MouseEvent(MouseID, x := 0, y := 0){
 	t := A_TickCount
-  if t - lastMouseCheck < 17 {
+  if t - lastMouseCheck < 10 {
     return
   }
 	text := "x: " x ", y: " y (lastMouseCheck ? (", Delta Time: " t - lastMouseCheck " ms, MouseID: " MouseID) : "")
