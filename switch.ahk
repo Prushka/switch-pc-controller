@@ -41,14 +41,26 @@ launchDebug()
 md := new MouseDelta("MouseEvent")
 md.SetState(true)
 
-SetTimer,CheckMouseEvent,100
+SetTimer,CheckMouseEvent,8
 SystemCursor("Off")
+ClipCursor()
+
+UnclipCursor() {
+  print("unclipping")
+  DllCall( "ClipCursor" )
+}
+
+ClipCursor() {
+  print("clipping")
+  VarSetCapacity(R,16,0),  NumPut(300,&R+0),NumPut(500,&R+4),NumPut(1000,&R+8),NumPut(1000,&R+12)
+  DllCall( "ClipCursor", UInt,&R )
+}
 
 CheckMouseEvent() {
     if (paused) {
         return
     }
-    if (A_TickCount - lastMouseCheck > 100 and (prevXDiff != 0 or prevYDiff != 0)) {
+    if (A_TickCount - lastMouseCheck > 50 and (prevXDiff != 0 or prevYDiff != 0)) {
         sendMouseDiff(0, 0)
         prevXDiff := 0
         prevYDiff := 0
@@ -58,7 +70,7 @@ CheckMouseEvent() {
 
 MouseEvent(MouseID, x := 0, y := 0){
 	t := A_TickCount
-  if t - lastMouseCheck < 8 {
+  if t - lastMouseCheck < 17 {
     return
   }
 	text := "x: " x ", y: " y (lastMouseCheck ? (", Delta Time: " t - lastMouseCheck " ms, MouseID: " MouseID) : "")
@@ -158,9 +170,11 @@ $F9::
 Suspend
 paused := !paused
 if paused{
+UnclipCursor()
 SystemCursor("On")
 md.SetState(false)
 }else{
+ClipCursor()
 SystemCursor("Off")
 md.SetState(true)
 }
