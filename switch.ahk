@@ -36,7 +36,6 @@ global centerX := Round(totalWidth//2)
 global centerY := Round(totalHeight//2)
 
 DllCall("Winmm.dll\timeBeginPeriod", UInt, 1)
-; launchDebug()
 
 md := new MouseDelta("MouseEvent")
 md.SetState(true)
@@ -74,34 +73,10 @@ MouseEvent(MouseID, x := 0, y := 0){
     return
   }
 	text := "x: " x ", y: " y (lastMouseCheck ? (", Delta Time: " t - lastMouseCheck " ms, MouseID: " MouseID) : "")
-	print(text)
 	lastMouseCheck := t
   prevXDiff := x
   prevYDiff := y
   sendMouseDiff(x, y)
-}
-
-CheckMouse() {
-  if paused{
-    return
-  }
-  MouseGetPos,newX,newY
-  if (newX != mouseX or newY != mouseY or prevXDiff != 0 or prevYDiff != 0) {
-    xDiff := newX - mouseX
-    yDiff := newY - mouseY
-    if (xDiff == 0 and yDiff == 0) {
-      MouseMove, centerX, centerY
-      print(centerX "," centerY)
-      mouseX := centerX
-      mouseY := centerY
-    }else{
-      mouseX := newX
-      mouseY := newY
-    }
-    prevXDiff := xDiff
-    prevYDiff := yDiff
-    sendMouseDiff(xDiff, yDiff)
-  }
 }
 
 AccurateSleep(ms) {
